@@ -39,6 +39,7 @@ library
     Frontend.Examples.TicTacToe.Main
     Frontend.Examples.WebSocketChat.Main
     Frontend.Examples.WebSocketEcho.Main
+    Frontend.Examples.DataTable.Main
   ghc-options: -Wall
 
 executable frontend

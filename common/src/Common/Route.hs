@@ -52,6 +52,7 @@ data Example :: * -> * where
   Example_DisplayGameUpdates :: Example ()
   Example_WebSocketEcho :: Example ()
   Example_WebSocketChat :: Example ()
+  Example_DataTable :: Example ()
 deriving instance Show (Example a)
 
 backendRouteEncoder
@@ -76,6 +77,7 @@ backendRouteEncoder = handleEncoder (const (InL BackendRoute_Missing :/ ())) $
         Example_DisplayGameUpdates -> PathSegment "displaygameupdates" $ unitEncoder mempty
         Example_WebSocketEcho -> PathSegment "websocketecho" $ unitEncoder mempty
         Example_WebSocketChat -> PathSegment "websocketchat" $ unitEncoder mempty
+        Example_DataTable -> PathSegment "datatable" $ unitEncoder mempty
 
 concat <$> mapM deriveRouteComponent
   [ ''BackendRoute
@@ -97,6 +99,7 @@ exampleTitle (Some.This sec) = case sec of
   Example_DisplayGameUpdates -> "Display Game Updates"
   Example_WebSocketEcho -> "WebSocket Echo"
   Example_WebSocketChat -> "WebSocket Chat"
+  Example_DataTable -> "Data Presentation"
 
 
 -- | Provide a human-readable name for a route
@@ -120,6 +123,7 @@ sectionHomepage (Some.This sec) = sec :/ case sec of
   Example_DisplayGameUpdates -> ()
   Example_WebSocketEcho -> ()
   Example_WebSocketChat -> ()
+  Example_DataTable -> ()
 
 -- | Provide a human-readable description for a given section
 exampleDescription :: Some Example -> Text
@@ -143,6 +147,8 @@ exampleDescription (Some.This sec) = case sec of
     "Demonstrates use of WebSocket by sending and receiving messages from websocket.org' echo API"
   Example_WebSocketChat ->
     "A simple chat server, this uses the common and backend packages to share data between client and server"
+  Example_DataTable ->
+    "Tabular data presentation tool (spreadsheet)"
 
 -- | Provide a human-readable description for a given route
 routeDescription :: R FrontendRoute -> Text
@@ -181,3 +187,4 @@ exampleSourceCode (sec :=> _) = base <> path <> file
       Example_DisplayGameUpdates -> "DisplayGameUpdates"
       Example_WebSocketEcho -> "WebSocketEcho"
       Example_WebSocketChat -> "WebSocketChat"
+      Example_DataTable -> "DataTable"

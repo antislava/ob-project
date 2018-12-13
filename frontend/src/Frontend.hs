@@ -30,6 +30,7 @@ import qualified Frontend.Examples.TicTacToe.Main as TicTacToe
 import qualified Frontend.Examples.DisplayGameUpdates.Main as DisplayGameUpdates
 import qualified Frontend.Examples.WebSocketEcho.Main as WebSocketEcho
 import qualified Frontend.Examples.WebSocketChat.Main as WebSocketChat
+import qualified Frontend.Examples.DataTable.Main as DataTable
 
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend
@@ -65,6 +66,7 @@ examples _ = subRoute_ $ \case
   Example_DisplayGameUpdates -> DisplayGameUpdates.app
   Example_WebSocketEcho -> WebSocketEcho.app
   Example_WebSocketChat -> WebSocketChat.app
+  uxample_DataTable -> DataTable.app
 
 -- | An @<article>@ tag that will set its title and the class of its child
 -- @<section>@ based on the current route
