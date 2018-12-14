@@ -187,8 +187,8 @@ endif
 
 # NOTE: Currently generating two directories for ghc and ghcjs, which greatly overlap, resulting in many redundancies in tags file!
 haskdeps :
-	nix-build nix-utils/haskell-sources.nix --arg hpkgs '(import ./. {}).ghc' --arg targets 'p: [ p.common p.backend p.frontend ]' -o $(HDEPS)/ghc
-	nix-build nix-utils/haskell-sources.nix --arg hpkgs '(import ./. {}).ghcjs' --arg targets 'p: [ p.common p.frontend ]' -o $(HDEPS)/ghcjs
+	nix-build nix-utils/haskellDepSources.nix --arg hpkgs '(import ./. {}).ghc' --arg targets 'p: [ p.common p.backend p.frontend ]' -o $(HDEPS)/ghc
+	nix-build nix-utils/haskellDepSources.nix --arg hpkgs '(import ./. {}).ghcjs' --arg targets 'p: [ p.common p.frontend ]' -o $(HDEPS)/ghcjs
 # make doesn't like <(...) too much...
 	ls -1 $(HDEPS)/ghc   > $(HDEPS)/ghc.txt
 	ls -1 $(HDEPS)/ghcjs > $(HDEPS)/ghcjs.txt
