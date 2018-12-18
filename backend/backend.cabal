@@ -34,3 +34,14 @@ executable backend
                , common
                , frontend
                , obelisk-backend
+
+executable scrape
+  main-is: main.hs
+  hs-source-dirs: src-scrape
+  if impl(ghcjs)
+    buildable: False
+  build-depends: base
+               , backend
+               , common
+               , frontend
+               , obelisk-backend
