@@ -8,7 +8,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Frontend.Examples.DataTable.Main
+module Frontend.Examples.SortableList.Main
   (app)
   where
 

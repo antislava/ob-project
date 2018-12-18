@@ -18,6 +18,7 @@ library
                , text
                , websockets
                , websockets-snap
+               , snap
   exposed-modules:
     Backend
     Backend.Examples.WebSocketChat.Server

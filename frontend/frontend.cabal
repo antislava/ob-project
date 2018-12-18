@@ -23,6 +23,19 @@ library
                , obelisk-generated-static
                , text
                , universe
+               -- SORTABLE LIST
+               , dependent-sum
+               , dependent-map
+               , containers
+               , transformers
+               , mtl
+               , random
+               , vector
+               , time
+               -- BENCH
+               , ghc-prim
+               , prim-uniq
+               , primitive
   exposed-modules:
     Frontend
     Frontend.FontAwesome
@@ -40,6 +53,8 @@ library
     Frontend.Examples.WebSocketChat.Main
     Frontend.Examples.WebSocketEcho.Main
     Frontend.Examples.DataTable.Main
+    Frontend.Examples.Benchmark.Main
+    Frontend.Examples.SortableList.Main
   ghc-options: -Wall
 
 executable frontend

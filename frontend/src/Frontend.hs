@@ -15,7 +15,7 @@ import Reflex.Dom.Core
 import qualified Obelisk.ExecutableConfig as Cfg
 
 import Data.Text (Text)
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.IO.Class (liftIO, MonadIO)
 import Control.Monad.Fix (MonadFix)
 import Common.Route
 
@@ -56,6 +56,7 @@ examples
      , PerformEvent t m
      , TriggerEvent t m
      , Prerender js m
+     , MonadIO (Performable m)
      )
   => Maybe Text
   -> Dynamic t (R Example)
