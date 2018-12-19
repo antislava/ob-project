@@ -20,11 +20,12 @@ import qualified Backend.Examples.WebSocketChat.Server as WebSocketChat
 backend :: Backend BackendRoute FrontendRoute
 backend = Backend
   { _backend_run = \serve -> do
-      state <- newMVar WebSocketChat.newServerState
+      webSocketChatState <- newMVar WebSocketChat.newServerState
       serve $ \case
         BackendRoute_Missing :=> Identity () -> return ()
         BackendRoute_WebSocketChat :=> Identity () -> do
-          runWebSocketsSnap (WebSocketChat.application state)
+          -- runWebSocketsSnap (WebSocketChat.application state)
+          runWebSocketsSnap (WebSocketChat.application webSocketChatState)
         BackendRoute_GetData :=> Identity f -> do
           -- -- TODO: Don't use head; and then securely traverse the path.
           -- let fname = contentDir </> T.unpack (head f) <> ".md"
