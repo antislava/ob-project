@@ -15,7 +15,7 @@ import Frontend.Examples.ECharts.ExamplesData (rainfallData, waterFlowData)
 
 import Control.Monad.IO.Class (liftIO, MonadIO)
 import Control.Monad.Fix (MonadFix)
-import Control.Monad (void, replicateM)
+import Control.Monad
 import qualified Data.Map as Map
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -29,7 +29,7 @@ import System.Random
 import GHC.Generics (Generic)
 import Data.Aeson (FromJSON, parseJSON, genericParseJSON, defaultOptions, fieldLabelModifier)
 import Obelisk.Generated.Static
-import Language.Javascript.JSaddle (JSException(..), catch, JSVal, toJSVal, JSM, MonadJSM, liftJSM, valToText)
+import Language.Javascript.JSaddle hiding ((!!))
 
 import Reflex.Dom.Core
 
@@ -46,7 +46,7 @@ app
   => Maybe Text
   -> m ()
 app _ = prerender blank $ elAttr "div" ("style" =: "display: flex; flex-wrap: wrap") $ do
-  mapM_ wrap
+  mapM_ wrapper
     [ basicLineChart
     , cpuStatTimeLineChart
     , stackedAreaChart
@@ -58,16 +58,22 @@ app _ = prerender blank $ elAttr "div" ("style" =: "display: flex; flex-wrap: wr
   dEv <- do
     pb <- getPostBuild
     d1 <- holdDyn Nothing
-      =<< getAndDecode ((static @"data/confidence-band.json") <$ pb)
+      =<< getAndDecode' ((static @"data/confidence-band.json") <$ pb)
     -- d2 <- holdDyn Nothing
     --   =<< getAndDecode ((static @"data/aqi-beijing.json") <$ pb)
     -- let d = (,) <$> d1 <*> d2
     return $ fforMaybe (updated d1) id
-  widgetHold blank $ ffor dEv $ \c -> do
-    void $ wrap $ confidenceBand c
+  void $ widgetHold blank $ ffor dEv $ \c -> do
+    void $ wrapper $ confidenceBand c
   return ()
   where
-    wrap m = elAttr "div" ("style" =: "padding: 50px;") m
+    wrapper m = elAttr "div" ("style" =: "padding: 50px;") m
+
+-- TODO upstream to reflex-dom-core
+getAndDecode' :: (MonadIO m, MonadJSM (Performable m), PerformEvent t m, HasJSContext (Performable m), TriggerEvent t m, FromJSON a) => Event t Text -> m (Event t (Maybe a))
+getAndDecode' url = do
+  r <- performRequestAsync $ fmap (\x -> XhrRequest "GET" x def) url
+  return $ fmap (jsonDecode . textToJSString <=< _xhrResponse_responseText) r
 
 tickWithSpeedSelector
   :: ( PostBuild t m
@@ -128,7 +134,7 @@ basicLineChart = do
     let ev = gate (current $ value cb) tick
     foldDyn (\_ (l:ls) -> ls ++ [l]) xAxisData ev
 
-  let chartDataDyn = (0 =: (def, dd, xd)) <> (1 =: (dd2Series, dd2, xd))
+  let chartDataDyn = ((0 :: Int) =: (def, dd, xd)) <> (1 =: (dd2Series, dd2, xd))
       dd2Series = def
         & series_smooth ?~ Left True
         & series_areaStyle ?~ def
@@ -138,8 +144,10 @@ basicLineChart = do
               chartDataDyn
             )
   where
-    yAxisData = Map.fromList $ zip xAxisData $ map DataInt $ reverse [820, 932, 901, 934, 1290, 1330, 1320]
-    yAxisData2 = Map.fromList $ zip xAxisData $ map DataInt $ [820, 932, 901, 934, 1290, 1330, 1320]
+    yAxisData = Map.fromList $ zip xAxisData $ map DataInt $ reverse dataVals
+    yAxisData2 = Map.fromList $ zip xAxisData $ map DataInt dataVals
+    dataVals :: [Int]
+    dataVals = [820, 932, 901, 934, 1290, 1330, 1320]
     xAxisData = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     basicLineChartOpts :: ChartOptions
     basicLineChartOpts = def
@@ -157,7 +165,6 @@ multipleXAxes
      , PerformEvent t m
      , MonadHold t m
      , GhcjsDomSpace ~ DomBuilderSpace m
-     , MonadFix m
      , MonadJSM m
      , MonadJSM (Performable m)
      )
@@ -166,7 +173,7 @@ multipleXAxes =
   lineChart $ LineChartConfig (600, 400) (constDyn multipleXAxesOpts)
     (chartDataDyn)
   where
-    chartDataDyn = (0 =: (s1, constDyn y1, constDyn x1)) <> (1 =: (s2, constDyn y2, constDyn x2))
+    chartDataDyn = ((0 :: Int) =: (s1, constDyn y1, constDyn x1)) <> (1 =: (s2, constDyn y2, constDyn x2))
     s1 = def
       & series_smooth ?~ Left True
       & series_name ?~ xSeriesName1
@@ -177,13 +184,13 @@ multipleXAxes =
     xSeriesName1 = "2015"
     xSeriesName2 = "2016"
     colors = ["#5793f3", "#d14a61", "#675bba"]
-    y1 = Map.fromList $ zip (months xSeriesName1) $
+    y1 = Map.fromList $ zip (monthsF xSeriesName1) $
       map DataDouble [2.6, 5.9, 9.0, 26.4, 28.7, 70.7, 175.6, 182.2, 48.7, 18.8, 6.0, 2.3]
-    y2 = Map.fromList $ zip (months xSeriesName2) $
+    y2 = Map.fromList $ zip (monthsF xSeriesName2) $
       map DataDouble [3.9, 5.9, 11.1, 18.7, 48.3, 69.2, 231.6, 46.6, 55.4, 18.4, 10.3, 0.7]
-    months y = map (\m -> y <> "-" <> tshow m) [1..12]
-    x1 = months xSeriesName1
-    x2 = months xSeriesName2
+    monthsF y = map (\m -> y <> "-" <> tshow m) ([1..12] :: [Int])
+    x1 = monthsF xSeriesName1
+    x2 = monthsF xSeriesName2
 
     multipleXAxesOpts :: ChartOptions
     multipleXAxesOpts = def
@@ -240,7 +247,6 @@ cpuStatTimeLineChart
   :: ( PostBuild t m
      , DomBuilder t m
      , PerformEvent t m
-     , MonadSample t m
      , MonadHold t m
      , GhcjsDomSpace ~ DomBuilderSpace m
      , MonadFix m
@@ -286,11 +292,10 @@ cpuStatTimeLineChart = do
     chartData
 
 cpuStatGenData
-  :: forall t m js .
+  :: forall t m .
      ( PostBuild t m
      , DomBuilder t m
      , PerformEvent t m
-     , MonadSample t m
      , MonadHold t m
      , MonadFix m
      , MonadIO (Performable m)
@@ -334,16 +339,13 @@ stackedAreaChart
      , PerformEvent t m
      , MonadHold t m
      , GhcjsDomSpace ~ DomBuilderSpace m
-     , TriggerEvent t m
-     , MonadFix m
-     , MonadIO (Performable m)
      , MonadJSM m
      , MonadJSM (Performable m)
      )
   => m (Chart)
 stackedAreaChart =
   lineChart $ LineChartConfig (600, 400) (constDyn opts) $ Map.fromList
-    $ zip [0..] $ map (\(l, d) ->
+    $ zip ([0..] :: [Int]) $ map (\(l, d) ->
                          (l, constDyn $ Map.fromList
                            (zip xAxisData $ map DataInt d)
                          , constDyn xAxisData))
@@ -393,6 +395,7 @@ stackedAreaChart =
     xAxisData = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     stackLabel = "stackLabel"
     l1 :: Series SeriesLine
+    d1 :: [Int]
     l1 = def
       & series_stack ?~ stackLabel
       & series_name ?~ "A"
@@ -426,16 +429,13 @@ rainfall
      , PerformEvent t m
      , MonadHold t m
      , GhcjsDomSpace ~ DomBuilderSpace m
-     , TriggerEvent t m
-     , MonadFix m
-     , MonadIO (Performable m)
      , MonadJSM m
      , MonadJSM (Performable m)
      )
   => m (Chart)
 rainfall =
   lineChart $ LineChartConfig (600, 400) (constDyn opts) $
-    (0 =: (s1, constDyn d1, constDyn xAxisData))
+    ((0 :: Int) =: (s1, constDyn d1, constDyn xAxisData))
     <> (1 =: (s2, constDyn d2, constDyn xAxisData))
   where
     opts = def
@@ -543,6 +543,7 @@ rainfall =
       <> [dateF 9 d t | d <- [1..30], t <- [0..23]]
       <> [dateF 10 d t | d <- [1..17], t <- [0..23]]
       <> [dateF 10 18 t | t <- [0..8]]
+    dateF :: Int -> Int -> Int -> Text
     dateF m d t = "2009/" <> tshow m <> "/" <> tshow d <> "\n" <> tshow t <> ":00"
 
 tshow :: (Show a) => a -> Text
@@ -554,16 +555,13 @@ largeScaleAreaChart
      , PerformEvent t m
      , MonadHold t m
      , GhcjsDomSpace ~ DomBuilderSpace m
-     , TriggerEvent t m
-     , MonadFix m
-     , MonadIO (Performable m)
      , MonadJSM m
      , MonadJSM (Performable m)
      )
   => m (Chart)
 largeScaleAreaChart =
   lineChart $ LineChartConfig (600, 400) (constDyn opts) $
-    (0 =: (s1, constDyn d1, constDyn xAxisData))
+    ((0 :: Int) =: (s1, constDyn d1, constDyn xAxisData))
   where
     opts = def
       { _chartOptions_title = Just $ def
@@ -654,9 +652,6 @@ confidenceBand
      , PerformEvent t m
      , MonadHold t m
      , GhcjsDomSpace ~ DomBuilderSpace m
-     , TriggerEvent t m
-     , MonadFix m
-     , MonadIO (Performable m)
      , MonadJSM m
      , MonadJSM (Performable m)
      )
@@ -664,7 +659,7 @@ confidenceBand
   -> m (Chart)
 confidenceBand confData =
   lineChart $ LineChartConfig (600, 400) (constDyn opts) $
-    (1 =: (s1, constDyn d1, constDyn xAxisData))
+    ((1 :: Int) =: (s1, constDyn d1, constDyn xAxisData))
     <> (2 =: (s2, constDyn d2, constDyn xAxisData))
     <> (3 =: (s3, constDyn d3, constDyn xAxisData))
   where
@@ -747,7 +742,6 @@ confidenceBand confData =
       & series_hoverAnimation ?~ False
       & series_itemStyle ?~ def { _itemStyle_color = Just "#c23531" }
     base = negate $ minimum $ map _confidenceData_l confData
-    xSeriesName = "Confidence Band"
     xAxisData = map _confidenceData_date confData
 
 rainfallAndWaterFlow :: ChartOptions
@@ -861,6 +855,7 @@ rainfallAndWaterFlow = def
       <> [dateF 9 d t | d <- [1..30], t <- [0..23]]
       <> [dateF 10 d t | d <- [1..17], t <- [0..23]]
       <> [dateF 10 18 t | t <- [0..8]]
+    dateF :: Int -> Int -> Int -> Text
     dateF m d t = "2009/" <> tshow m <> "/" <> tshow d <> "\n" <> tshow t <> ":00"
 
 type AqiData = [(Text, Double)]
