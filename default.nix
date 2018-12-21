@@ -4,6 +4,8 @@
 }:
 with import ./.obelisk/impl { inherit system iosSdkVersion; };
 project ./. ({ hackGet, ... }: {
+  android.applicationId = "systems.obsidian.obelisk.examples.all";
+  android.displayName = "Obelisk Examples";
   inherit withHoogle;
   packages = {
     reflex-dom-echarts = hackGet ./deps/reflex-dom-echarts;
