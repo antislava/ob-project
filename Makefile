@@ -59,15 +59,16 @@ git-init :
 # make nix/obelisk.nix -B
 # make nix/reflex-platform.nix -B
 # make nix/nixpkgs.nix -B
+
 $(NIX_DIR)/%.nix : $(NIX_DIR)/%.git.json
 	echo -e "with builtins.fromJSON (builtins.readFile ./$(<F));\nbuiltins.fetchGit { inherit url rev; }" > $@
 
 # make -B nix/obelisk.git.json to force update
 $(NIXPKGS_JSN) :
 	# Switch between the original nixpkgs at github or a local mirror:
-	# nix-prefetch-git https:/$(NIXPKGS_SRC) > $(NIXPKGS)
-	cd $(GIT_CACHE)$(NIXPKGS_SRC) && git fetch
-	nix-prefetch-git $(GIT_CACHE)$(NIXPKGS_SRC) > $(NIXPKGS_JSN)
+	nix-prefetch-git https:/$(NIXPKGS_SRC) > $(NIXPKGS)
+	# cd $(GIT_CACHE)$(NIXPKGS_SRC) && git fetch
+	# nix-prefetch-git $(GIT_CACHE)$(NIXPKGS_SRC) > $(NIXPKGS_JSN)
 
 # make -B nix/obelisk.git.json to force update
 $(REFLEX_JSN) :
@@ -82,6 +83,8 @@ $(OBELISK_JSN) :
 	# nix-prefetch-git https:/$(OBELISK_SRC) > $(OBELISK_JSN)
 	cd $(GIT_CACHE)$(OBELISK_SRC) && git fetch
 	nix-prefetch-git $(GIT_CACHE)$(OBELISK_SRC) > $(OBELISK_JSN)
+	# nix-prefetch-git --rev refs/heads/develop https:/$(OBELISK_SRC) > $(OBELISK_JSN)
+	# nix-prefetch-git --rev refs/heads/is-allow-location-services-android https:/$(OBELISK_SRC) > $(OBELISK_JSN)
 
 
 # IMPORT EXPRESSIONS FOR DEPENDENT (HASKELL) PACKAGES
@@ -185,10 +188,11 @@ else
 	$(error fast-tags not installed! Are you in the right shell?)
 endif
 
-# NOTE: Currently generating two directories for ghc and ghcjs, which greatly overlap, resulting in many redundancies in tags file!
+# NOTE:
+# Currently generating two directories for ghc and ghcjs, which greatly overlap, resulting in many redundancies in tags file!
 haskdeps :
-	nix-build nix-utils/haskellDepSources.nix --arg hpkgs '(import ./. {}).ghc' --arg targets 'p: [ p.common p.backend p.frontend ]' -o $(HDEPS)/ghc
-	nix-build nix-utils/haskellDepSources.nix --arg hpkgs '(import ./. {}).ghcjs' --arg targets 'p: [ p.common p.frontend ]' -o $(HDEPS)/ghcjs
+	nix-build nix/sources.nix -A sources -o $(HDEPS)/ghc --argstr compiler "ghc" --arg targets "ps: [ ps.common ps.frontend ps.backend ]"
+	nix-build nix/sources.nix -A sources -o $(HDEPS)/ghcjs --argstr compiler "ghcjs" --arg targets "ps: [ ps.common ps.frontend ]"
 # make doesn't like <(...) too much...
 	ls -1 $(HDEPS)/ghc   > $(HDEPS)/ghc.txt
 	ls -1 $(HDEPS)/ghcjs > $(HDEPS)/ghcjs.txt
@@ -199,6 +203,25 @@ $(HDEPS)/core :
 	rm -rf $(HDEPS)/core
 	mkdir  $(HDEPS)/core
 	cat $(HDEPS)/ghc-core.txt $(HDEPS)/ghcjs-core.txt | sort | uniq | xargs -I P sh -c 'cabal get P -d /cabal-cache; ln -s /cabal-cache/P $(HDEPS)/core'
+
+# $(HDEPS)/ghc-core :
+# ifdef NIX_GHC
+# 	rm -rf $(HDEPS)/ghc-core
+# 	mkdir  $(HDEPS)/ghc-core
+# 	cat $(HDEPS)/ghc-core.txt | xargs -I P sh -c 'cabal get P -d /cabal-cache; ln -s /cabal-cache/P $(HDEPS)/ghc-core'
+# else
+# 	$(error Not in GHC shell!)
+# endif
+
+# $(HDEPS)/ghcjs-core :
+# ifdef NIX_GHCJS
+# 	rm -rf $(HDEPS)/ghcjs-core
+# 	mkdir  $(HDEPS)/ghcjs-core
+# 	cat $(HDEPS)/ghcjs-core.txt | xargs -I P sh -c 'cabal get P -d /cabal-cache; ln -s /cabal-cache/P $(HDEPS)/ghcjs-core'
+# else
+# 	$(error Not in GHCJS shell!)
+# endif
+
 
 # CLEANING
 
@@ -219,3 +242,4 @@ clean-tags :
 .PHONY: clean-tmp
 clean-tmp :
 	rm -f  .ghc.environment.*
+
