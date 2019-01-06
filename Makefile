@@ -81,10 +81,12 @@ $(REFLEX_JSN) :
 $(OBELISK_JSN) :
 	# Switch between the original obelisk at github or a local mirror:
 	# nix-prefetch-git https:/$(OBELISK_SRC) > $(OBELISK_JSN)
-	cd $(GIT_CACHE)$(OBELISK_SRC) && git fetch
-	nix-prefetch-git $(GIT_CACHE)$(OBELISK_SRC) > $(OBELISK_JSN)
+	cd $(GIT_CACHE)$(OBELISK_SRC) && git fetch --all
+	# nix-prefetch-git $(GIT_CACHE)$(OBELISK_SRC) > $(OBELISK_JSN)
+	nix-prefetch-git --rev refs/heads/master https:/$(OBELISK_SRC) > $(OBELISK_JSN)
 	# nix-prefetch-git --rev refs/heads/develop https:/$(OBELISK_SRC) > $(OBELISK_JSN)
 	# nix-prefetch-git --rev refs/heads/is-allow-location-services-android https:/$(OBELISK_SRC) > $(OBELISK_JSN)
+	# nix-prefetch-git --rev refs/heads/bump-reflex-platform https:/$(OBELISK_SRC) > $(OBELISK_JSN)
 
 
 # IMPORT EXPRESSIONS FOR DEPENDENT (HASKELL) PACKAGES
@@ -191,8 +193,10 @@ endif
 # NOTE:
 # Currently generating two directories for ghc and ghcjs, which greatly overlap, resulting in many redundancies in tags file!
 haskdeps :
-	nix-build nix/sources.nix -A sources -o $(HDEPS)/ghc --argstr compiler "ghc" --arg targets "ps: [ ps.common ps.frontend ps.backend ]"
-	nix-build nix/sources.nix -A sources -o $(HDEPS)/ghcjs --argstr compiler "ghcjs" --arg targets "ps: [ ps.common ps.frontend ]"
+	# nix-build nix/sources.nix -A sources -o $(HDEPS)/ghc --argstr compiler "ghc" --arg targets "ps: [ ps.common ps.frontend ps.backend ]"
+	# nix-build nix/sources.nix -A sources -o $(HDEPS)/ghcjs --argstr compiler "ghcjs" --arg targets "ps: [ ps.common ps.frontend ]"
+	nix-build nix-utils/haskellDepSources.nix --arg hpkgs '(import ./. {}).ghc' --arg targets 'p: [ p.common p.backend p.frontend ]' -o $(HDEPS)/ghc
+	nix-build nix-utils/haskellDepSources.nix --arg hpkgs '(import ./. {}).ghcjs' --arg targets 'p: [ p.common p.frontend ]' -o $(HDEPS)/ghcjs
 # make doesn't like <(...) too much...
 	ls -1 $(HDEPS)/ghc   > $(HDEPS)/ghc.txt
 	ls -1 $(HDEPS)/ghcjs > $(HDEPS)/ghcjs.txt
