@@ -10,9 +10,9 @@ NIXPKGS_SRC = /github.com/NixOS/nixpkgs
 NIXPKGS_JSN = $(NIX_DIR)/nixpkgs.git.json
 # NIXPKGS_NIX = $(NIX_DIR)/nixpkgs.nix
 
-OBELISK_SRC = /github.com/obsidiansystems/obelisk
-OBELISK_JSN = $(NIX_DIR)/obelisk.git.json
-# OBELISK_NIX = $(NIX_DIR)/obelisk.nix
+# OBELISK_SRC = /github.com/obsidiansystems/obelisk
+# OBELISK_JSN = $(NIX_DIR)/obelisk.git.json
+OBELISK_NIX = $(NIX_DIR)/obelisk.nix
 
 REFLEX_SRC = /github.com/reflex-frp/reflex-platform
 REFLEX_JSN = $(NIX_DIR)/reflex-platform.git.json
@@ -78,15 +78,15 @@ $(REFLEX_JSN) :
 	nix-prefetch-git $(GIT_CACHE)$(REFLEX_SRC) > $(REFLEX_JSN)
 
 # make -B nix/obelisk.git.json to force update
-$(OBELISK_JSN) :
-	# Switch between the original obelisk at github or a local mirror:
-	# nix-prefetch-git https:/$(OBELISK_SRC) > $(OBELISK_JSN)
-	cd $(GIT_CACHE)$(OBELISK_SRC) && git fetch --all
-	# nix-prefetch-git $(GIT_CACHE)$(OBELISK_SRC) > $(OBELISK_JSN)
-	nix-prefetch-git --rev refs/heads/master https:/$(OBELISK_SRC) > $(OBELISK_JSN)
-	# nix-prefetch-git --rev refs/heads/develop https:/$(OBELISK_SRC) > $(OBELISK_JSN)
-	# nix-prefetch-git --rev refs/heads/is-allow-location-services-android https:/$(OBELISK_SRC) > $(OBELISK_JSN)
-	# nix-prefetch-git --rev refs/heads/bump-reflex-platform https:/$(OBELISK_SRC) > $(OBELISK_JSN)
+# $(OBELISK_JSN) :
+# 	# Switch between the original obelisk at github or a local mirror:
+# 	# nix-prefetch-git https:/$(OBELISK_SRC) > $(OBELISK_JSN)
+# 	cd $(GIT_CACHE)$(OBELISK_SRC) && git fetch --all
+# 	# nix-prefetch-git $(GIT_CACHE)$(OBELISK_SRC) > $(OBELISK_JSN)
+# 	nix-prefetch-git --rev refs/heads/master https:/$(OBELISK_SRC) > $(OBELISK_JSN)
+# 	# nix-prefetch-git --rev refs/heads/develop https:/$(OBELISK_SRC) > $(OBELISK_JSN)
+# 	# nix-prefetch-git --rev refs/heads/is-allow-location-services-android https:/$(OBELISK_SRC) > $(OBELISK_JSN)
+# 	# nix-prefetch-git --rev refs/heads/bump-reflex-platform https:/$(OBELISK_SRC) > $(OBELISK_JSN)
 
 
 # IMPORT EXPRESSIONS FOR DEPENDENT (HASKELL) PACKAGES
@@ -104,11 +104,13 @@ $(NIX_DEPS)/%.nix : $(NIX_DEPS)/%.sh
 
 .PHONY : ob-install-global
 ob-install-global : $(OBELISK) $(OBELISK_NIX)
-	nix-env -f "<nixpkgs>" -i -E "f: (import (import ./nix/obelisk.nix) { }).command"
+	# nix-env -f "<nixpkgs>" -i -E "f: (import (import ./nix/obelisk.nix) { }).command"
+	nix-env -f "<nixpkgs>" -i -E "f: (import ./nix/obelisk.nix { }).command"
 
 .PHONY : ob-install-local
 ob-install-local : $(OBELISK) $(OBELISK_NIX)
-	nix-build -E "(import (import ./nix/obelisk.nix) { }).command" -o ./.ob
+	# nix-build -E "(import (import ./nix/obelisk.nix) { }).command" -o ./.ob
+	nix-build -E "(import ./nix/obelisk.nix { }).command" -o ./.ob
 
 .PHONY : shell-tools
 shell-tools : $(OBELISK) $(OBELISK_NIX)
@@ -119,7 +121,7 @@ ob-init :
 	ob init
 
 ob-upgrade-global-and-local :
-	make nix/obelisk.nix -B
+	# make nix/obelisk.nix -B
 	make ob-install-global
 	mkdir tmp && cd tmp && ob init && cp -a .obelisk .. && cd .. # && rm -rf tmp
 
