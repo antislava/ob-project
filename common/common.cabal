@@ -12,8 +12,12 @@ library
                , mtl
                , dependent-sum
                , text
+               , vector
+               , time
+               , scientific
 
   exposed-modules:
     Common.Api
     Common.Route
     Common.Examples.WebSocketChat.Message
+    Common.Examples.DataTable.PackageData

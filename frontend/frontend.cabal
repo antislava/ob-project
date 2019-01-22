@@ -31,15 +31,20 @@ library
                , dependent-sum
                , text
                , universe
+               -- SORTABLE TABLE FROM HEXPLORE
+               , bifunctors
+               , errors
+               , time
+               , non-empty-zipper
+               , reflex-dom-contrib
+               , fuzzy
+               , regex-tdfa
+               , regex-tdfa-text
                -- SORTABLE LIST
-               , dependent-sum
+               -- , dependent-sum
                , dependent-map
-               , containers
                , transformers
                , mtl
-               , random
-               , vector
-               , time
                -- BENCH
                , ghc-prim
                , prim-uniq
@@ -63,8 +68,10 @@ library
     Frontend.Examples.WebSocketChat.Main
     Frontend.Examples.WebSocketEcho.Main
     Frontend.Examples.DataTable.Main
-    Frontend.Examples.Benchmark.Main
-    Frontend.Examples.SortableList.Main
+    -- Frontend.Examples.Benchmark.Main
+    -- Frontend.Examples.SortableList.Main
+    Frontend.Examples.DataTable.Types
+
   ghc-options: -Wall
 
 executable frontend

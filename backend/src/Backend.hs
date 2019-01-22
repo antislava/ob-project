@@ -17,6 +17,13 @@ import Snap
 
 import qualified Backend.Examples.WebSocketChat.Server as WebSocketChat
 
+import qualified Data.ByteString as B
+import           Control.Monad.IO.Class (MonadIO, liftIO)
+import           System.Directory
+import           System.FilePath ((</>))
+
+pdataFile = "/DATA/hexplore/pdata.json" :: String
+
 backend :: Backend BackendRoute FrontendRoute
 backend = Backend
   { _backend_run = \serve -> do
@@ -38,7 +45,16 @@ backend = Backend
           --     (_page, html) <- liftIO $ renderStatic $ markdownView content
           --     writeBS html
           -- writeBS "asdf"
-          writeText f
 
+          -- writeText f
+          --
+          let fname = pdataFile
+          liftIO $ putStrLn fname
+          liftIO (doesFileExist fname) >>= \case
+            False ->
+              putResponse $ setResponseCode 404 emptyResponse
+            True -> do
+              content <- liftIO $ B.readFile fname
+              writeBS content
   , _backend_routeEncoder = backendRouteEncoder
   }
