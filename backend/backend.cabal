@@ -21,6 +21,8 @@ library
                , containers
                , websockets-snap
                , snap
+               , filepath
+               , directory
   exposed-modules:
     Backend
     Backend.Examples.WebSocketChat.Server
