@@ -23,6 +23,7 @@ import           System.Directory
 import           System.FilePath ((</>))
 
 pdataFile = "/DATA/hexplore/pdata.json" :: String
+-- pdataFile = static @"hexplore/pdata.json" :: String
 
 backend :: Backend BackendRoute FrontendRoute
 backend = Backend

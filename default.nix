@@ -15,4 +15,8 @@ project ./. ({ hackGet, pkgs, ... }: {
   # overrides = self: super: {
   #   reflex-dom-contrib = pkgs.haskell.lib.doJailbreak super.reflex-dom-contrib;
   # };
+  tools = ghc: with pkgs; [
+    tree jq
+    postgresql100
+  ];
 })
